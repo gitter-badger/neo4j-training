@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
@@ -26,7 +27,7 @@ public class _4_TriggerTest extends GraphTests {
 
     @Before
     public void prepare() {
-        nameCountTrigger = new CountTransactionEventHandler(); /*TODO: add missing code in this class (below)*/
+        nameCountTrigger = new CountTransactionEventHandler();
         graphDb.registerTransactionEventHandler(nameCountTrigger);
     }
 
@@ -69,13 +70,35 @@ public class _4_TriggerTest extends GraphTests {
 
         @Override
         public Long beforeCommit(TransactionData data) throws Exception {
-            //TODO: count the number of properties 'name' to commit
-            return -1L;
+            data.assignedNodeProperties().forEach(
+                prop -> {
+                    matchAndIncrement(prop, namePropertiesToCommit);
+                }
+            );
+            data.assignedRelationshipProperties().forEach(
+                prop -> {
+                    matchAndIncrement(prop, namePropertiesToCommit);
+                }
+            );
+            return namePropertiesToCommit.get();
         }
 
         @Override
         public void afterCommit(TransactionData data, Long seenBeforeCommit) {
-            //TODO: count the number of properties 'name' that are committed
+            data.assignedNodeProperties().forEach(
+                prop -> {
+                    matchAndIncrement(prop, committedNameProperties);
+                }
+            );
+            data.assignedRelationshipProperties().forEach(
+                prop -> {
+                    matchAndIncrement(prop, committedNameProperties);
+                }
+            );
+            if (committedNameProperties.get() > namePropertiesToCommit.get()) {
+                throw new IllegalStateException("Should not see more committed properties" +
+                    "than properties that were to commit");
+            }
         }
 
         @Override
@@ -88,6 +111,12 @@ public class _4_TriggerTest extends GraphTests {
 
         public long getCommittedNamePropertyCount() {
             return committedNameProperties.get();
+        }
+
+        private void matchAndIncrement(PropertyEntry<? extends PropertyContainer> prop, AtomicLong counter) {
+            if (prop.key().equals("name")) {
+                counter.incrementAndGet();
+            }
         }
     }
 }
