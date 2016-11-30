@@ -35,9 +35,8 @@ public class _1_RestApiTest {
 
     @Test
     public void should_make_sure_there_are_Doctor_Who_nodes() {
-        String query = null /*TODO:write Cypher query*/;
-        String transactionalEndpointUrl = "http://localhost:7474/db/data/???TODO????"; /*TODO: set the right URL */
-        fail("You should count the number of nodes that belong to Doctor Who graph");
+        String query = "MATCH (n) RETURN COUNT(n) AS count";
+        String transactionalEndpointUrl = "http://localhost:7474/db/data/transaction/commit";
 
         TransactionalResponse response = restClient.postCypher(transactionalEndpointUrl, transactionalPayload().add(cypher(query)));
 
@@ -53,9 +52,12 @@ public class _1_RestApiTest {
     public void should_find_length_of_the_shortest_path_between_sarah_jane_smith_and_skaro() throws IOException {
         int sarahNodeId = getSarahJaneSmithNodeId();
         int skaroId = getSkaroNodeId();
-        String shortestPathUrl = "http://localhost:7474/db/data/???TODO????"; /*TODO: set the right URL*/
-        Collection<RestRelationshipType> relationshipTypes = Arrays.asList(/*TODO: specify with relation types to traverse*/);
-        fail("You should find the length of the shortest path between Sarah Jane Smith and planet Skaro");
+        String shortestPathUrl = "http://localhost:7474/db/data/node/" + sarahNodeId + "/path";
+        Collection<RestRelationshipType> relationshipTypes = Arrays.asList(
+                RestRelationshipType.relationshipType("COMES_FROM"),
+                RestRelationshipType.relationshipType("COMPANION_OF"),
+                RestRelationshipType.relationshipType("ENEMY_OF")
+        );
 
         Response response = restClient.post(shortestPathUrl, shortestPathPayload().create(skaroId, relationshipTypes));
         Map<String, Object> responseData = asDictionary(response.body().string());
